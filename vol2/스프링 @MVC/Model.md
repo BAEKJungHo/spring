@@ -101,7 +101,7 @@ public String index(@ModelAttribute("searchVo") BoardVo boardVo) {
 
 위 처럼 model 에 담을 키값을 지정할 수 도 있고, 지정하지않고 @ModelAttribute 만 사용하면 카멜케이스 기법을 적용하여 키값으로 저장한다.
 
-@ModelAttribute 와 커맨드 객체를 같이 사용하면, 해당 객체를 이용하여 view 단에서 `객체변수명.속성명` 이런식으로 원하는 속성 값을 쓸 수 있다.
+@ModelAttribute 와 커맨드 객체를 같이 사용하면, 해당 객체를 이용하여 view 에서 `객체변수명.속성명` 이런식으로 원하는 속성 값을 쓸 수 있다.
 
 ## Erros, BindingResult
 
