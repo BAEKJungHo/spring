@@ -47,3 +47,86 @@ public void upgradeLevels() throws Exception {
 
 `DI 의 기본 아이디어는 실제 사용할 오브젝트의 클래스 정체는 감춘 채 인터페이스를 통해 간접적으로 접근하는 것이다.` 그 덕분에 구현 클래스는 얼마든지 외부에서 변경할 수 있다.
 보통 이렇게 인터페이스를 이용해 구현 클래스를 클라이언트에 노출하지 않고 런타임 시에 DI 를 통해 적용하는 방법을 사용하는 이유는, 일반적으로 구현 클래스를 바꿔가면서 사용하기 위해서이다.
+
+보통 웹 개발할 때(정식 운영 중에는) 한 개의 Service 는 한 개의 구현체와 매핑이 된다.(정규 구현 클래스를 DI 해주는 것처럼 한 번에 한 가지 클래스를 선택해서 적용하도록 되어있다.)
+하지만 꼭 그래야 하는 법은 없다.
+
+UserService 를 구현한 또 다른 구현체를 만들 수 있다. 첫 번째는 비지니스 로직을 담고있는 UserService 구현체와 하나는 트랜잭션 코드를 담당하는 구현체를 만들어서, 트랜잭션 코드를 담당하는
+구현체에서 비지니스 로직을 담고있는 구현체를 DI 받아서 실질적인 처리를 위임하는 것이다.
+
+```java
+public interface UserService {
+  void add(User user);
+  void upgradeLevels();
+}
+```
+
+```java
+public class UserServiceImpl implements UserService {
+   UserRepository userRepository;
+   MailSender mailSender;
+   
+   public void upgradeLevels() {
+    List<User> users = userDao.getAll();
+    for(User user : users) {
+      if(canUpgradeLevel(user)) {
+        upgradeLevel(user);
+      }
+    }
+   }
+}
+```
+
+```java
+public class UserServiceTx implements UserService {
+  UserService userService;
+  PlatformTransactionManager transactionManager;
+  
+  public void setTransactionManager(PlatformTransactionManager transactionManager) {
+    this.transactionManager = transactionManager;
+  }
+  
+  public void setUserService(UserService userService) {
+    this.userService = userService;
+  }
+  
+  // DI 받은 UserService 오브젝트에 모든 기능을 위임한다.
+  public void add(User user) {
+    userService.add(user);
+  }
+  
+  // DI 받은 UserService 오브젝트에 모든 기능을 위임한다.
+  public void upgradeLevels() {
+    TransactionStatus status = this.transactionManager.getTransaction(new DefaultTransactionDefinition());
+    try {
+      userService.upgradeLevels();
+      this.transactionManager.commit(status);
+    } catch(RuntimeException e) {
+      this.transactionManager.rollback(status);
+      throw e;
+    }
+  } 
+
+}
+```
+
+UserServiceTx 는 비지니스 로직을 전혀 가지고 있지않고, 다른 구현 오브젝트에 기능을 위임한다.
+
+따라서 의존관계는 아래와 같이 구성된다.
+
+> Client -> UserServiceTx -> UserServiceImpl
+
+이렇게 하더라도 문제가 하나 있는데, `클라이언트가 핵심기능을 가진 클래스를 직접 사용해버리면 부가기능이 적용될 기회가 없어진다는 것`이다. 그래서 부가기능은 마치 자신이 핵심 기능을 가진
+클래스인 것처럼 꾸며서, 클라이언트가 자신을 거쳐서 핵심기능을 사용하도록 만들어야 한다.
+
+> Client -> 핵심기능 인터페이스 / 부가기능 -> 핵심기능 인터페이스 / 핵심 인터페이스
+
+이렇게 마치 자신이 클라이언트가 사용하려고 하는 실제 대상인 것처럼 위장해서 클라이언트의 요청을 받아주는것을 대리자, 대리인 같은 역할을 한다고 해서 `프록시(proxy)` 라고 부른다.
+그리고 프록시를 통해 최종적으로 요청을 위임받아 처리하는 실제 오브젝트를 `타깃(target)`, 또는 `실체(real subject)` 라고 부른다.
+
+> Client -> Proxy -> target(real subject)
+
+`프록시의 특징은 타깃과 같은 인터페이스를 구현했다는 것과 프록시가 타깃을 제어할 수 있는 위치에 있다는 것이다.`
+
+프록시는 사용 목적에 따라 두 가지로 구분할 수 있다. 첫 번째는 클라이언트가 타깃에 __접근하는 방법을 제어__ 하기 위해서다. 두 번째는 타깃에 __부가적인 기능을 부여__ 해주기 위해서다.
+두 가지 모두 대리 오브젝트라는 개념의 프록시를 두고 사용한다는 점은 동일하지만, 목적에 따라서 디자인 패턴에서는 다른 패턴으로 구분한다.
