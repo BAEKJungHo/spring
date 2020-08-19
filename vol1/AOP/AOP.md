@@ -114,7 +114,7 @@ UserServiceTx 는 비지니스 로직을 전혀 가지고 있지않고, 다른 �
 
 따라서 의존관계는 아래와 같이 구성된다.
 
-> Client -> UserServiceTx -> UserServiceImpl
+> Client -> UserServiceTx(Proxy) -> UserServiceImpl(Target)
 
 이렇게 하더라도 문제가 하나 있는데, `클라이언트가 핵심기능을 가진 클래스를 직접 사용해버리면 부가기능이 적용될 기회가 없어진다는 것`이다. 그래서 부가기능은 마치 자신이 핵심 기능을 가진
 클래스인 것처럼 꾸며서, 클라이언트가 자신을 거쳐서 핵심기능을 사용하도록 만들어야 한다.
@@ -128,5 +128,53 @@ UserServiceTx 는 비지니스 로직을 전혀 가지고 있지않고, 다른 �
 
 `프록시의 특징은 타깃과 같은 인터페이스를 구현했다는 것과 프록시가 타깃을 제어할 수 있는 위치에 있다는 것이다.`
 
-프록시는 사용 목적에 따라 두 가지로 구분할 수 있다. 첫 번째는 클라이언트가 타깃에 __접근하는 방법을 제어__ 하기 위해서다. 두 번째는 타깃에 __부가적인 기능을 부여__ 해주기 위해서다.
+프록시는 사용 목적에 따라 두 가지로 구분할 수 있다. 
+
+첫 번째는 클라이언트가 타깃에 __접근하는 방법을 제어__ 하기 위해서다. 
+
+두 번째는 타깃에 __부가적인 기능을 부여__ 해주기 위해서다.
+
 두 가지 모두 대리 오브젝트라는 개념의 프록시를 두고 사용한다는 점은 동일하지만, 목적에 따라서 디자인 패턴에서는 다른 패턴으로 구분한다.
+
+## 데코레이터 패턴
+
+자바 IO 패키지의 InputStream 과 OutputStream 구현 클래스는 데코레이터 패턴이 사용된 대표적인 예다. 
+
+```java
+// InputStream 이라는 인터페이스를 구현한 타킷인 FileInputStream 에 버퍼 읽기 기능을 제공해 주는 BufferedInputStream 이라는 데코레이터를 적용한 예다.
+InputStream is = new BufferedInputStream(new FileInputStream("a.txt"));
+```
+
+데코레이터 패턴은 타킷의 코드를 손대지 않고, 클라이언트가 호출하는 방법도 변경 하지 않은 채로 새로운 기능을 추가할 때 유용한 방법이다.
+
+## 다이나믹 프록시
+
+프록시는 기존 코드에 영향을 주지 않으면서 타깃의 기능을 확장하거나 접근 방법을 제어할 수 있는 유용한 방법이다. 그럼에도 불구하고 많은 개발자들은 타깃 코드를 직접 고치고 말지 
+번거롭게 프록시를 만들지는 않겠다고 생각하는데, 그 이유가 프록시를 만드는 일이 상당히 번거롭기 때문이다.
+
+java.lang.reflect 패키지 안에 프록시를 손쉽게 만들 수 있도록 지원해주는 클래스들이 있다.
+
+- 프록시 역할
+  - 위임
+  - 부가작업
+  
+```java
+public class UserServiceTx implements UserService {
+  UserService userService; // target 
+  
+  public void add(User user) { // 메서드 구현과 위임
+    this.userService.add(user);
+  }
+  
+  public void upgradeLevels() { // 메서드 구현
+    TransactionStatus = this.transactionManager.getTransaction(new DefaultTransactionDefinition()); // 부가기능 수행
+    try {
+      userServic.upgradeLevels(); // 위임
+      this.transactionManager.commit(status); // 부가기능 수행
+    } catch (RuntimeException e) { // 부가기능 수행
+    this.transactionManager.rollback(status);// 부가기능 수행
+    throw e; // 부가기능 수행
+   }
+  }
+}
+```
