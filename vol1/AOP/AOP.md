@@ -193,3 +193,30 @@ public class UserServiceTx implements UserService {
 클래스 오브젝트를 이용하면 클래스 코드에 대한 메타정보를 가져오거나 오브젝트를 조작할 수 있다.
 
 > https://docs.oracle.com/javase/8/docs/technotes/guides/reflection/index.html
+
+## JoinPoint 와 Signature
+
+- AOP 관련해서 JoinPoint를 파라미터로 전달받을 경우 반드시 첫번째 파라미터로 지정해야 함(그 외는 예외 발생)
+- JoinPoint 인터페이스는 호출되는 대상 객체, 메서드 그리고 전달되는 파라미터 목록에 접근할 수 있는 메서드를 제공
+
+  ■ Signature getSignature( ) - 호출되는 메서드에 대한 정보를 구함
+
+  ■ Object getTarget( ) - 대상 객체를 구함
+
+  ■ Object[ ] getArgs( ) - 파라미터 목록을 구함
+
+
+- org.aspectj.lang.Signature 인터페이스는 호출되는 메서드와 관련된 정보를 제공하기 위해 다음과 같은 메서드를 정의
+
+  ■ String getName( ) - 메서드의 이름을 구함
+
+  ■ String toLongName( ) - 메서드를 완전하게 표현한 문장을 구함(메서드의 리턴 타입, 파라미터 타입 모두 표시)
+
+  ■ String toShortName( ) - 메서드를 축약해서 표현한 문장을 구함(메서드의 이름만 구함)
+
+
+- Around Advice의 경우 org.aspectj.lang.ProceedingJoinPoint를 첫 번째 파라미터로 전달받는데 해당 인터페이스는 프록시 대상 객체를 호출할 수있는 proceed() 메서드를 제공
+- ProceedingJoinPoint는 JoinPoint 인터페이스를 상속받았기 때문에 Signature를 이용하여 대상 객체, 메서드 및 전달되는 파라미터에 대한 정보를 구할 수 있음
+
+
+
