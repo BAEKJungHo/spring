@@ -218,6 +218,57 @@ public class UserServiceTx implements UserService {
 - Around Advice의 경우 org.aspectj.lang.ProceedingJoinPoint를 첫 번째 파라미터로 전달받는데 해당 인터페이스는 프록시 대상 객체를 호출할 수있는 proceed() 메서드를 제공
 - ProceedingJoinPoint는 JoinPoint 인터페이스를 상속받았기 때문에 Signature를 이용하여 대상 객체, 메서드 및 전달되는 파라미터에 대한 정보를 구할 수 있음
 
+## 스프링에서의 AOP
+
+스프링에서 AOP 를 사용하기 위해서는 `context-aspect.xml` 과 같은 aop 설정 파일을 만들어줘야 한다.
+
+- context-aspect.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+						http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+
+	<!-- 개인정보 확인 이력 aop bean -->
+	<bean id="memberHistoryAspect" class="egovframework.mayeye.cms.memberHistory.service.MemberHistoryAOP" />
+	<!-- 개인정보 확인 이력 aop config-->
+	<aop:config>
+		<aop:pointcut id="findMemberInfoPointcut" expression="execution(* egovframework.mayeye.cms.memberInfo.service.impl.MemberInfoServiceImpl.findMemberInfo(..))" />
+		<aop:aspect id="memberHistoryAdvisor" ref="memberHistoryAspect">
+			<aop:after-returning method="doAfterReturning" pointcut-ref="findMemberInfoPointcut"/>
+		</aop:aspect>
+	</aop:config>
+	
+</beans>
+```
+
+- java
+
+```java
+@Component("memberHistoryAOP")
+@Aspect
+public class MemberHistoryAOP {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MemberHistoryAOP.class);
+
+    @Resource(name = "memberHistoryService")
+    private MemberHistoryServiceImpl memberHistoryService;
+
+    @Pointcut("execution(public * egovframework.weave.memberInfo.service.impl.MemberInfoServiceImpl.findMemberInfo(..))")
+    public void createMemberHistory() {}
+
+    @AfterReturning(pointcut = "createMemberHistory()")
+    public Object doAfterReturning(JoinPoint joinPoint) throws Throwable {
+        LOGGER.info("creating member information history(log..)");
+        memberHistoryService.createMemberHistory(joinPoint.getSignature().getName(), joinPoint.getArgs());
+        return joinPoint.toString();
+    }
+
+}
+```
+
 ## References.
 
 > https://offbyone.tistory.com/34
