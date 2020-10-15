@@ -218,5 +218,7 @@ public class UserServiceTx implements UserService {
 - Around Advice의 경우 org.aspectj.lang.ProceedingJoinPoint를 첫 번째 파라미터로 전달받는데 해당 인터페이스는 프록시 대상 객체를 호출할 수있는 proceed() 메서드를 제공
 - ProceedingJoinPoint는 JoinPoint 인터페이스를 상속받았기 때문에 Signature를 이용하여 대상 객체, 메서드 및 전달되는 파라미터에 대한 정보를 구할 수 있음
 
+## References.
 
+> https://offbyone.tistory.com/34
 
