@@ -232,10 +232,10 @@ public class UserServiceTx implements UserService {
 						http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
 
 	<!-- 개인정보 확인 이력 aop bean -->
-	<bean id="memberHistoryAspect" class="egovframework.mayeye.cms.memberHistory.service.MemberHistoryAOP" />
+	<bean id="memberHistoryAspect" class="egovframework.weave.memberHistory.service.MemberHistoryAOP" />
 	<!-- 개인정보 확인 이력 aop config-->
 	<aop:config>
-		<aop:pointcut id="findMemberInfoPointcut" expression="execution(* egovframework.mayeye.cms.memberInfo.service.impl.MemberInfoServiceImpl.findMemberInfo(..))" />
+		<aop:pointcut id="findMemberInfoPointcut" expression="execution(* egovframework.weave.memberInfo.service.impl.MemberInfoServiceImpl.findMemberInfo(..))" />
 		<aop:aspect id="memberHistoryAdvisor" ref="memberHistoryAspect">
 			<aop:after-returning method="doAfterReturning" pointcut-ref="findMemberInfoPointcut"/>
 		</aop:aspect>
